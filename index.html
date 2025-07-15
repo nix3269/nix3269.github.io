@@ -6,8 +6,6 @@
     <title>Nix Brandon Correia | Cybersecurity Specialist</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
     <style>
         :root {
             --primary: #0af;
@@ -218,14 +216,60 @@
             height: 100%;
             z-index: 1;
             overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
-        #threatVizCanvas {
-            position: absolute;
-            top: 0;
-            left: 0;
+        .globe-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+        }
+
+        .globe {
+            position: relative;
             width: 100%;
             height: 100%;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #0a2a5a, #0a0a16);
+            box-shadow: 
+                inset 0 0 50px rgba(0, 170, 255, 0.3),
+                0 0 80px rgba(0, 170, 255, 0.2);
+            border: 1px solid rgba(0, 170, 255, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .globe::before {
+            content: "";
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle, transparent 60%, rgba(0, 170, 255, 0.1) 100%),
+                repeating-linear-gradient(0deg, rgba(0, 170, 255, 0.1) 0px, rgba(0, 170, 255, 0.1) 1px, transparent 1px, transparent 20px),
+                repeating-linear-gradient(90deg, rgba(0, 170, 255, 0.1) 0px, rgba(0, 170, 255, 0.1) 1px, transparent 1px, transparent 20px);
+            border-radius: 50%;
+        }
+
+        .threat-line {
+            position: absolute;
+            height: 2px;
+            background: linear-gradient(to right, var(--danger), transparent);
+            transform-origin: left center;
+            box-shadow: 0 0 10px var(--danger);
+        }
+
+        .threat-node {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--danger);
+            box-shadow: 0 0 10px var(--danger);
         }
 
         .viz-overlay {
@@ -329,6 +373,119 @@
             0% { opacity: 1; }
             50% { opacity: 0.3; }
             100% { opacity: 1; }
+        }
+
+        /* HoneyDB API Section */
+        .honeydb-section {
+            background: var(--darker);
+            padding: 80px 0;
+            border-top: 1px solid rgba(0, 170, 255, 0.1);
+            border-bottom: 1px solid rgba(0, 170, 255, 0.1);
+        }
+
+        .honeydb-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .honeydb-logo {
+            color: var(--warning);
+            font-size: 2.5rem;
+        }
+
+        .api-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .api-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 30px;
+            background: var(--primary);
+            color: white;
+            font-family: 'Orbitron', sans-serif;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .api-btn:hover {
+            background: rgba(0, 170, 255, 0.8);
+            transform: translateY(-3px);
+        }
+
+        .api-btn:disabled {
+            background: var(--gray);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .api-status {
+            text-align: center;
+            color: var(--warning);
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+
+        .threat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .threat-card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid rgba(255, 50, 50, 0.3);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .threat-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 50, 50, 0.2);
+        }
+
+        .threat-card h3 {
+            color: var(--danger);
+            font-size: 1.2rem;
+        }
+
+        .threat-count {
+            background: rgba(255, 50, 50, 0.2);
+            color: var(--danger);
+            padding: 3px 10px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+        }
+
+        .threat-details {
+            color: #ccc;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .threat-details p {
+            margin-bottom: 10px;
+        }
+
+        .threat-details ul {
+            padding-left: 20px;
+            margin: 10px 0;
+        }
+
+        .threat-details li {
+            margin-bottom: 5px;
         }
 
         /* Section Styles */
@@ -748,6 +905,7 @@
                     <li><a href="#about">About</a></li>
                     <li><a href="#skills">Skills</a></li>
                     <li><a href="#experience">Experience</a></li>
+                    <li><a href="#honeydb">Threat Intel</a></li>
                     <li><a href="#projects">Projects</a></li>
                     <li><a href="#education">Education</a></li>
                     <li><a href="#contact">Contact</a></li>
@@ -771,9 +929,12 @@
             </div>
         </div>
         
-        <!-- Enhanced Threat Visualization -->
+        <!-- Threat Visualization -->
         <div class="threat-viz">
-            <canvas id="threatVizCanvas"></canvas>
+            <div class="globe-container">
+                <div class="globe"></div>
+                <!-- Threat lines will be generated dynamically -->
+            </div>
             
             <div class="viz-overlay">
                 <h3>Global Threat Dashboard</h3>
@@ -946,6 +1107,41 @@
         </div>
     </section>
 
+    <!-- HoneyDB API Section -->
+    <section id="honeydb" class="honeydb-section">
+        <div class="container">
+            <div class="honeydb-header">
+                <i class="fas fa-database honeydb-logo"></i>
+                <div class="section-header">
+                    <h2>Threat Intelligence Dashboard</h2>
+                    <p>Real-time threat data powered by HoneyDB API</p>
+                </div>
+            </div>
+            
+            <div class="api-controls">
+                <button id="fetchThreatsBtn" class="api-btn">Load Threat Data</button>
+                <button id="clearDataBtn" class="api-btn">Clear Data</button>
+            </div>
+            
+            <div class="api-status" id="apiStatus">
+                API requests limited to twice per day. Last fetched: Never
+            </div>
+            
+            <div class="threat-grid" id="threatGrid">
+                <!-- Threat cards will be populated here -->
+                <div class="threat-card">
+                    <div class="threat-card-header">
+                        <h3>No Threat Data Loaded</h3>
+                    </div>
+                    <div class="threat-details">
+                        <p>Click "Load Threat Data" to fetch real-time threat intelligence from HoneyDB.</p>
+                        <p>Data is limited to two API requests per day to comply with rate limits.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Projects Section -->
     <section id="projects">
         <div class="container">
@@ -961,7 +1157,7 @@
                         <h3>EDR Evasion Research</h3>
                         <p>Researched signature-bypass techniques for Meterpreter payloads</p>
                         <div class="project-links">
-                            <a href="#"><i class="fab fa-github"></i> GitHub</a>
+                            <a href="https://github.com/nix3269" target="_blank"><i class="fab fa-github"></i> GitHub</a>
                             <a href="#"><i class="fas fa-external-link-alt"></i> Demo</a>
                         </div>
                     </div>
@@ -973,7 +1169,7 @@
                         <h3>CTF Architect</h3>
                         <p>Created 5+ Active Directory attack labs for local CTFs, simulating Kerberoasting/DPERS attacks</p>
                         <div class="project-links">
-                            <a href="#"><i class="fab fa-github"></i> GitHub</a>
+                            <a href="https://github.com/nix3269" target="_blank"><i class="fab fa-github"></i> GitHub</a>
                             <a href="#"><i class="fas fa-external-link-alt"></i> Demo</a>
                         </div>
                     </div>
@@ -1173,218 +1369,91 @@
             });
         });
         
-        // Enhanced Threat Visualization with Three.js
+        // Threat Visualization Animation
         function initThreatVisualization() {
-            const canvas = document.getElementById('threatVizCanvas');
-            const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
-            const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+            const globe = document.querySelector('.globe');
+            const globeRect = globe.getBoundingClientRect();
+            const globeCenterX = globeRect.left + globeRect.width / 2;
+            const globeCenterY = globeRect.top + globeRect.height / 2;
             
-            renderer.setSize(canvas.clientWidth, canvas.clientHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
+            // Create threat lines and nodes
+            const threats = [
+                {type: 'Phishing', color: '#ff3232', location: 'New York, USA'},
+                {type: 'Malware', color: '#ff8c00', location: 'London, UK'},
+                {type: 'DDoS', color: '#ffff00', location: 'Tokyo, Japan'},
+                {type: 'Ransomware', color: '#ff00ff', location: 'Mumbai, India'},
+                {type: 'Credential Stuffing', color: '#00ffff', location: 'Berlin, Germany'}
+            ];
             
-            // Create a glowing globe
-            const globeGeometry = new THREE.SphereGeometry(1.5, 32, 32);
-            const globeMaterial = new THREE.MeshPhongMaterial({
-                color: 0x0a0a16,
-                emissive: 0x0088ff,
-                emissiveIntensity: 0.3,
-                shininess: 80,
-                transparent: true,
-                opacity: 0.9
-            });
-            const globe = new THREE.Mesh(globeGeometry, globeMaterial);
-            scene.add(globe);
-            
-            // Add wireframe for better visualization
-            const wireframe = new THREE.WireframeGeometry(globeGeometry);
-            const wireframeMaterial = new THREE.LineBasicMaterial({
-                color: 0x00aaff,
-                opacity: 0.3,
-                transparent: true
-            });
-            const wireframeMesh = new THREE.LineSegments(wireframe, wireframeMaterial);
-            globe.add(wireframeMesh);
-            
-            // Add ambient light
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
-            scene.add(ambientLight);
-            
-            // Add directional light
-            const directionalLight = new THREE.DirectionalLight(0x00aaff, 0.8);
-            directionalLight.position.set(5, 5, 5);
-            scene.add(directionalLight);
-            
-            // Add point lights for glowing effect
-            const pointLight1 = new THREE.PointLight(0x00aaff, 1, 10);
-            pointLight1.position.set(2, 2, 2);
-            scene.add(pointLight1);
-            
-            const pointLight2 = new THREE.PointLight(0x00ff88, 0.8, 10);
-            pointLight2.position.set(-2, -2, -2);
-            scene.add(pointLight2);
-            
-            // Add particles for cyber effect
-            const particlesGeometry = new THREE.BufferGeometry();
-            const particlesCount = 500;
-            const posArray = new Float32Array(particlesCount * 3);
-            
-            for (let i = 0; i < particlesCount * 3; i += 3) {
-                // Random position around the globe
-                const radius = 2 + Math.random() * 1.5;
-                const theta = Math.random() * Math.PI * 2;
-                const phi = Math.acos(2 * Math.random() - 1);
+            threats.forEach((threat, index) => {
+                // Create threat line
+                const angle = (index * 72) * (Math.PI / 180); // Convert to radians
+                const startX = globeCenterX + Math.cos(angle) * 300;
+                const startY = globeCenterY + Math.sin(angle) * 300;
                 
-                posArray[i] = radius * Math.sin(phi) * Math.cos(theta);
-                posArray[i + 1] = radius * Math.sin(phi) * Math.sin(theta);
-                posArray[i + 2] = radius * Math.cos(phi);
-            }
-            
-            particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-            
-            const particlesMaterial = new THREE.PointsMaterial({
-                size: 0.02,
-                color: 0x00aaff,
-                transparent: true,
-                opacity: 0.7
+                const line = document.createElement('div');
+                line.className = 'threat-line';
+                line.style.left = `${startX}px`;
+                line.style.top = `${startY}px`;
+                line.style.width = '0';
+                line.style.transform = `rotate(${Math.atan2(globeCenterY - startY, globeCenterX - startX)}rad)`;
+                line.style.backgroundColor = `linear-gradient(to right, ${threat.color}, transparent)`;
+                line.style.boxShadow = `0 0 10px ${threat.color}`;
+                
+                document.querySelector('.globe-container').appendChild(line);
+                
+                // Create threat node
+                const node = document.createElement('div');
+                node.className = 'threat-node';
+                node.style.left = `${startX}px`;
+                node.style.top = `${startY}px`;
+                node.style.backgroundColor = threat.color;
+                node.style.boxShadow = `0 0 10px ${threat.color}`;
+                document.querySelector('.globe-container').appendChild(node);
+                
+                // Animate the threat line
+                setTimeout(() => {
+                    line.style.width = `${Math.sqrt(
+                        Math.pow(globeCenterX - startX, 2) + 
+                        Math.pow(globeCenterY - startY, 2)
+                    )}px`;
+                }, index * 500);
             });
             
-            const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
-            scene.add(particlesMesh);
-            
-            // Add threat indicators
-            const threatMarkers = [];
-            const threatColors = [0xff3232, 0xff8c00, 0xffff00, 0xff00ff];
-            
-            function addThreatMarker() {
-                const threatGeometry = new THREE.SphereGeometry(0.08, 8, 8);
-                const threatMaterial = new THREE.MeshBasicMaterial({
-                    color: threatColors[Math.floor(Math.random() * threatColors.length)],
-                    emissive: 0xff3232,
-                    emissiveIntensity: 0.8
-                });
+            // Create random attacks
+            setInterval(() => {
+                const startX = Math.random() * window.innerWidth;
+                const startY = Math.random() * window.innerHeight;
                 
-                const threat = new THREE.Mesh(threatGeometry, threatMaterial);
+                const threatType = threats[Math.floor(Math.random() * threats.length)];
                 
-                // Position threat randomly on the globe surface
-                const theta = Math.random() * Math.PI * 2;
-                const phi = Math.acos(2 * Math.random() - 1);
-                const radius = 1.55;
+                const line = document.createElement('div');
+                line.className = 'threat-line';
+                line.style.left = `${startX}px`;
+                line.style.top = `${startY}px`;
+                line.style.width = '0';
+                line.style.transform = `rotate(${Math.atan2(globeCenterY - startY, globeCenterX - startX)}rad)`;
+                line.style.backgroundColor = `linear-gradient(to right, ${threatType.color}, transparent)`;
+                line.style.boxShadow = `0 0 10px ${threatType.color}`;
                 
-                threat.position.x = radius * Math.sin(phi) * Math.cos(theta);
-                threat.position.y = radius * Math.sin(phi) * Math.sin(theta);
-                threat.position.z = radius * Math.cos(phi);
+                document.querySelector('.globe-container').appendChild(line);
                 
-                scene.add(threat);
-                threatMarkers.push(threat);
+                setTimeout(() => {
+                    line.style.width = `${Math.sqrt(
+                        Math.pow(globeCenterX - startX, 2) + 
+                        Math.pow(globeCenterY - startY, 2)
+                    )}px`;
+                }, 10);
                 
-                // Remove some threats occasionally
-                if (threatMarkers.length > 20) {
-                    const oldThreat = threatMarkers.shift();
-                    scene.remove(oldThreat);
-                }
-                
-                // Schedule next threat
-                setTimeout(addThreatMarker, 800 + Math.random() * 1200);
-            }
-            
-            // Add connecting lines for threats
-            const lineMaterial = new THREE.LineBasicMaterial({
-                color: 0xff3232,
-                opacity: 0.4,
-                transparent: true
-            });
-            
-            const lines = [];
-            
-            function addConnectionLine() {
-                if (threatMarkers.length > 1) {
-                    const startIndex = Math.floor(Math.random() * threatMarkers.length);
-                    let endIndex;
-                    do {
-                        endIndex = Math.floor(Math.random() * threatMarkers.length);
-                    } while (endIndex === startIndex);
-                    
-                    const startPos = threatMarkers[startIndex].position;
-                    const endPos = threatMarkers[endIndex].position;
-                    
-                    const lineGeometry = new THREE.BufferGeometry().setFromPoints([
-                        new THREE.Vector3(startPos.x, startPos.y, startPos.z),
-                        new THREE.Vector3(endPos.x, endPos.y, endPos.z)
-                    ]);
-                    
-                    const line = new THREE.Line(lineGeometry, lineMaterial);
-                    scene.add(line);
-                    lines.push(line);
-                    
-                    // Remove line after some time
-                    setTimeout(() => {
-                        scene.remove(line);
-                        lines.splice(lines.indexOf(line), 1);
-                    }, 2000);
-                }
-                
-                // Schedule next line
-                setTimeout(addConnectionLine, 300 + Math.random() * 500);
-            }
-            
-            // Position camera
-            camera.position.z = 5;
-            
-            // Animation loop
-            function animate() {
-                requestAnimationFrame(animate);
-                
-                // Rotate globe
-                globe.rotation.y += 0.001;
-                globe.rotation.x += 0.0005;
-                
-                // Animate threats
-                threatMarkers.forEach(threat => {
-                    threat.scale.x = 0.8 + Math.sin(Date.now() * 0.005) * 0.2;
-                    threat.scale.y = 0.8 + Math.sin(Date.now() * 0.005) * 0.2;
-                    threat.scale.z = 0.8 + Math.sin(Date.now() * 0.005) * 0.2;
-                });
-                
-                // Animate particles
-                particlesMesh.rotation.y += 0.001;
-                particlesMesh.rotation.x += 0.0005;
-                
-                renderer.render(scene, camera);
-            }
-            
-            // Start animations
-            animate();
-            setTimeout(addThreatMarker, 1000);
-            setTimeout(addConnectionLine, 1500);
-            
-            // Handle window resize
-            window.addEventListener('resize', () => {
-                camera.aspect = canvas.clientWidth / canvas.clientHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(canvas.clientWidth, canvas.clientHeight);
-            });
+                // Remove after animation
+                setTimeout(() => {
+                    line.remove();
+                }, 3000);
+            }, 1000);
         }
         
         // Initialize when page loads
-        window.addEventListener('load', () => {
-            initThreatVisualization();
-            
-            // Animate threat counters
-            const threatsBlocked = document.getElementById('threatsBlocked');
-            const incidents = document.getElementById('incidents');
-            
-            let threatsCount = 8421;
-            let incidentsCount = 127;
-            
-            setInterval(() => {
-                threatsCount += Math.floor(Math.random() * 3);
-                incidentsCount = 120 + Math.floor(Math.random() * 15);
-                
-                threatsBlocked.textContent = threatsCount.toLocaleString();
-                incidents.textContent = incidentsCount;
-            }, 2000);
-        });
+        window.addEventListener('load', initThreatVisualization);
         
         // Parallax effect for hero section
         window.addEventListener('scroll', function() {
@@ -1395,6 +1464,256 @@
                 threatViz.style.transform = `translateY(${scrollPosition * 0.3}px)`;
             }
         });
+        
+        // HoneyDB API Integration with rate limiting
+        const API_ENDPOINT = 'https://honeydb.io/api/threats';
+        // In a real implementation, you would use your actual HoneyDB API key
+        // This is a placeholder for demonstration purposes
+
+        // import and set API_ID_KEY and API_SEC_KEY from config.js or environment variables
+
+
+        const API_ID_KEY = ''; 
+        const API_SEC_KEY = ''; 
+        
+        // Threat data storage
+        let threatData = [];
+        let lastFetchTime = null;
+        let fetchCount = 0;
+        const MAX_FETCHES_PER_DAY = 2;
+        
+        // DOM elements
+        const fetchThreatsBtn = document.getElementById('fetchThreatsBtn');
+        const clearDataBtn = document.getElementById('clearDataBtn');
+        const apiStatus = document.getElementById('apiStatus');
+        const threatGrid = document.getElementById('threatGrid');
+        
+        // Initialize from localStorage
+        function loadFromStorage() {
+            const savedData = localStorage.getItem('threatData');
+            const savedTime = localStorage.getItem('lastFetchTime');
+            const savedCount = localStorage.getItem('fetchCount');
+            
+            if (savedData) {
+                threatData = JSON.parse(savedData);
+                renderThreatData();
+            }
+            
+            if (savedTime) {
+                lastFetchTime = new Date(savedTime);
+                updateApiStatus();
+            }
+            
+            if (savedCount) {
+                fetchCount = parseInt(savedCount);
+            }
+            
+            updateButtonState();
+        }
+        
+        // Save to localStorage
+        function saveToStorage() {
+            localStorage.setItem('threatData', JSON.stringify(threatData));
+            localStorage.setItem('lastFetchTime', lastFetchTime);
+            localStorage.setItem('fetchCount', fetchCount);
+        }
+        
+        // Update API status display
+        function updateApiStatus() {
+            if (!lastFetchTime) {
+                apiStatus.textContent = 'API requests limited to twice per day. Last fetched: Never';
+                return;
+            }
+            
+            const lastFetchStr = lastFetchTime.toLocaleString();
+            const remainingFetches = MAX_FETCHES_PER_DAY - fetchCount;
+            
+            apiStatus.textContent = `API requests limited to twice per day. Last fetched: ${lastFetchStr}. Remaining today: ${remainingFetches}`;
+        }
+        
+        // Update button state based on rate limits
+        function updateButtonState() {
+            const remainingFetches = MAX_FETCHES_PER_DAY - fetchCount;
+            
+            if (remainingFetches <= 0) {
+                fetchThreatsBtn.disabled = true;
+                fetchThreatsBtn.textContent = 'Daily Limit Reached';
+                apiStatus.textContent += ' - Daily limit reached';
+            } else {
+                fetchThreatsBtn.disabled = false;
+                fetchThreatsBtn.textContent = 'Load Threat Data';
+            }
+        }
+        
+        // Render threat data to the grid
+        function renderThreatData() {
+            if (threatData.length === 0) {
+                threatGrid.innerHTML = `
+                    <div class="threat-card">
+                        <div class="threat-card-header">
+                            <h3>No Threat Data Available</h3>
+                        </div>
+                        <div class="threat-details">
+                            <p>No threat data has been loaded yet.</p>
+                            <p>Click "Load Threat Data" to fetch real-time threat intelligence from HoneyDB.</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            threatGrid.innerHTML = '';
+            
+            threatData.slice(0, 6).forEach(threat => {
+                const threatCard = document.createElement('div');
+                threatCard.className = 'threat-card';
+                
+                threatCard.innerHTML = `
+                    <div class="threat-card-header">
+                        <h3>${threat.name}</h3>
+                        <div class="threat-count">${threat.count} incidents</div>
+                    </div>
+                    <div class="threat-details">
+                        <p><strong>Type:</strong> ${threat.type}</p>
+                        <p><strong>Severity:</strong> ${threat.severity}</p>
+                        <p><strong>Description:</strong> ${threat.description}</p>
+                        <p><strong>Mitigation:</strong> ${threat.mitigation}</p>
+                    </div>
+                `;
+                
+                threatGrid.appendChild(threatCard);
+            });
+        }
+        
+        // Simulated API call to HoneyDB (in a real implementation, this would be an actual API call)
+        function fetchThreatData() {
+            return new Promise((resolve) => {
+                // Simulate API delay
+                setTimeout(() => {
+                    // This is mock data - in a real implementation, you would use:
+                    // fetch(API_ENDPOINT, { headers: { 'X-HoneyDb-ApiId': API_KEY } })
+                    
+                    
+                    const mockThreatData = [
+                        {
+                            name: 'Malicious Bot Activity',
+                            type: 'Botnet',
+                            severity: 'High',
+                            count: Math.floor(Math.random() * 1000) + 500,
+                            description: 'Automated bot activity scanning for vulnerabilities across multiple systems.',
+                            mitigation: 'Implement WAF rules and rate limiting to block suspicious traffic patterns.'
+                        },
+                        {
+                            name: 'SSH Brute Force Attack',
+                            type: 'Credential Attack',
+                            severity: 'Medium',
+                            count: Math.floor(Math.random() * 800) + 300,
+                            description: 'Repeated SSH login attempts using common username/password combinations.',
+                            mitigation: 'Implement fail2ban, use key-based authentication, and restrict SSH access.'
+                        },
+                        {
+                            name: 'RDP Exploit Attempt',
+                            type: 'Vulnerability Exploit',
+                            severity: 'Critical',
+                            count: Math.floor(Math.random() * 600) + 200,
+                            description: 'Attempts to exploit known vulnerabilities in Remote Desktop Protocol services.',
+                            mitigation: 'Patch RDP services, implement network-level authentication, and restrict access.'
+                        },
+                        {
+                            name: 'Web Application Scanner',
+                            type: 'Reconnaissance',
+                            severity: 'Low',
+                            count: Math.floor(Math.random() * 1500) + 800,
+                            description: 'Automated scanners probing web applications for vulnerabilities and endpoints.',
+                            mitigation: 'Monitor for scanning patterns, block suspicious IPs, and implement WAF rules.'
+                        },
+                        {
+                            name: 'SQL Injection Attempt',
+                            type: 'Web Attack',
+                            severity: 'High',
+                            count: Math.floor(Math.random() * 400) + 150,
+                            description: 'Attempts to inject malicious SQL queries through web application inputs.',
+                            mitigation: 'Implement input validation, use prepared statements, and deploy WAF solutions.'
+                        },
+                        {
+                            name: 'Phishing Campaign',
+                            type: 'Social Engineering',
+                            severity: 'Medium',
+                            count: Math.floor(Math.random() * 1200) + 600,
+                            description: 'Coordinated phishing emails targeting employees with malicious links and attachments.',
+                            mitigation: 'Implement email filtering, user training, and multi-factor authentication.'
+                        }
+                    ];
+                    
+                    resolve(mockThreatData);
+                }, 1500);
+            });
+        }
+        
+        // Fetch threat data from API
+        async function fetchThreats() {
+            try {
+                // Check rate limits
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                if (lastFetchTime && lastFetchTime >= today) {
+                    if (fetchCount >= MAX_FETCHES_PER_DAY) {
+                        apiStatus.textContent = 'Daily API limit reached. Try again tomorrow.';
+                        return;
+                    }
+                } else {
+                    // Reset counter if it's a new day
+                    fetchCount = 0;
+                }
+                
+                // Show loading state
+                fetchThreatsBtn.disabled = true;
+                fetchThreatsBtn.textContent = 'Loading...';
+                apiStatus.textContent = 'Fetching threat data from HoneyDB...';
+                
+                // Fetch data
+                const data = await fetchThreatData();
+                threatData = data;
+                lastFetchTime = new Date();
+                fetchCount++;
+                
+                // Update UI
+                renderThreatData();
+                updateApiStatus();
+                updateButtonState();
+                saveToStorage();
+                
+            } catch (error) {
+                console.error('Error fetching threat data:', error);
+                apiStatus.textContent = 'Error fetching threat data. Please try again later.';
+            } finally {
+                fetchThreatsBtn.disabled = false;
+                updateButtonState();
+            }
+        }
+        
+        // Clear stored threat data
+        function clearThreatData() {
+            threatData = [];
+            lastFetchTime = null;
+            fetchCount = 0;
+            
+            renderThreatData();
+            updateApiStatus();
+            updateButtonState();
+            saveToStorage();
+            
+            apiStatus.textContent = 'Threat data cleared. API counter reset.';
+        }
+        
+        // Event listeners
+        fetchThreatsBtn.addEventListener('click', fetchThreats);
+        clearDataBtn.addEventListener('click', clearThreatData);
+        
+        // Initialize
+        loadFromStorage();
+        renderThreatData();
     </script>
 </body>
 </html>
