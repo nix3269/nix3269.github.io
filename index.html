@@ -6,6 +6,8 @@
     <title>Nix Brandon Correia | Cybersecurity Specialist</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
     <style>
         :root {
             --primary: #0af;
@@ -17,6 +19,9 @@
             --card-bg: rgba(20, 25, 50, 0.8);
             --glow: 0 0 10px var(--primary), 0 0 20px rgba(0, 170, 255, 0.5);
             --transition: all 0.3s ease;
+            --success: #0f4;
+            --warning: #ff8c00;
+            --danger: #ff3232;
         }
 
         * {
@@ -204,7 +209,7 @@
             transform: translateY(-3px);
         }
 
-        /* Threat Visualization - Unique Feature */
+        /* Threat Visualization - Enhanced Feature */
         .threat-viz {
             position: absolute;
             top: 0;
@@ -215,51 +220,115 @@
             overflow: hidden;
         }
 
-        .viz-container {
+        #threatVizCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
-            position: relative;
         }
 
-        .globe {
+        .viz-overlay {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 300px;
-            height: 300px;
-            border-radius: 50%;
-            background: rgba(10, 20, 40, 0.7);
-            box-shadow: 
-                inset 0 0 50px rgba(0, 170, 255, 0.3),
-                0 0 80px rgba(0, 170, 255, 0.2);
-            border: 1px solid rgba(0, 170, 255, 0.5);
+            width: 100%;
+            max-width: 300px;
+            padding: 20px;
+            background: rgba(5, 10, 20, 0.8);
+            border-radius: 10px;
+            border: 1px solid rgba(0, 170, 255, 0.3);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+            backdrop-filter: blur(5px);
         }
 
-        .threat-line {
-            position: absolute;
-            height: 2px;
-            background: linear-gradient(to right, rgba(255, 50, 50, 0.8), transparent);
-            transform-origin: left center;
-            box-shadow: 0 0 10px rgba(255, 50, 50, 0.8);
+        .viz-overlay h3 {
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 1.4rem;
         }
 
-        .threat-node {
-            position: absolute;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #ff3232;
-            box-shadow: 0 0 10px #ff3232;
+        .viz-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
         }
 
-        .threat-label {
-            position: absolute;
-            color: #ff3232;
-            font-size: 0.8rem;
+        .stat-item {
+            flex: 1;
+            min-width: 100px;
+            text-align: center;
+            padding: 10px;
+            background: rgba(10, 30, 60, 0.5);
+            border-radius: 8px;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
             font-family: 'Orbitron', sans-serif;
-            opacity: 0.8;
-            white-space: nowrap;
+            color: var(--secondary);
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        .threat-list {
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .threat-item {
+            padding: 8px 10px;
+            margin-bottom: 8px;
+            background: rgba(255, 50, 50, 0.1);
+            border-left: 3px solid var(--danger);
+            border-radius: 0 4px 4px 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .threat-item:before {
+            content: '•';
+            color: var(--danger);
+            margin-right: 10px;
+            font-size: 1.5rem;
+        }
+
+        .threat-info {
+            flex: 1;
+        }
+
+        .threat-type {
+            font-weight: 500;
+            margin-bottom: 3px;
+        }
+
+        .threat-location {
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+
+        .threat-status {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--danger);
+            margin-left: 10px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.3; }
+            100% { opacity: 1; }
         }
 
         /* Section Styles */
@@ -642,6 +711,14 @@
                 transform: translateY(0);
                 background: rgba(5, 10, 20, 0.8);
             }
+            .viz-overlay {
+                position: relative;
+                top: auto;
+                left: auto;
+                transform: none;
+                margin: 20px auto;
+                width: 90%;
+            }
         }
 
         @media (max-width: 576px) {
@@ -694,11 +771,53 @@
             </div>
         </div>
         
-        <!-- Unique Feature: Threat Visualization -->
-        <div class="threat-viz" id="threatViz">
-            <div class="viz-container">
-                <div class="globe"></div>
-                <!-- Threat lines will be generated dynamically -->
+        <!-- Enhanced Threat Visualization -->
+        <div class="threat-viz">
+            <canvas id="threatVizCanvas"></canvas>
+            
+            <div class="viz-overlay">
+                <h3>Global Threat Dashboard</h3>
+                <div class="viz-stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="threatsBlocked">8,421</div>
+                        <div class="stat-label">Threats Blocked</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="incidents">127</div>
+                        <div class="stat-label">Active Incidents</div>
+                    </div>
+                </div>
+                
+                <div class="threat-list">
+                    <div class="threat-item">
+                        <div class="threat-info">
+                            <div class="threat-type">Ransomware Attack</div>
+                            <div class="threat-location">New York, USA</div>
+                        </div>
+                        <div class="threat-status"></div>
+                    </div>
+                    <div class="threat-item">
+                        <div class="threat-info">
+                            <div class="threat-type">Credential Stuffing</div>
+                            <div class="threat-location">London, UK</div>
+                        </div>
+                        <div class="threat-status"></div>
+                    </div>
+                    <div class="threat-item">
+                        <div class="threat-info">
+                            <div class="threat-type">DDoS Attack</div>
+                            <div class="threat-location">Tokyo, Japan</div>
+                        </div>
+                        <div class="threat-status"></div>
+                    </div>
+                    <div class="threat-item">
+                        <div class="threat-info">
+                            <div class="threat-type">Phishing Campaign</div>
+                            <div class="threat-location">Mumbai, India</div>
+                        </div>
+                        <div class="threat-status"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -1054,106 +1173,223 @@
             });
         });
         
-        // Unique Feature: Threat Visualization
-        function initThreatViz() {
-            const vizContainer = document.querySelector('.viz-container');
-            const globe = document.querySelector('.globe');
-            const globeRect = globe.getBoundingClientRect();
-            const globeCenterX = globeRect.left + globeRect.width / 2;
-            const globeCenterY = globeRect.top + globeRect.height / 2;
+        // Enhanced Threat Visualization with Three.js
+        function initThreatVisualization() {
+            const canvas = document.getElementById('threatVizCanvas');
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
             
-            // Create threat lines and nodes
-            const threats = [
-                {type: 'Phishing', color: '#ff3232'},
-                {type: 'Malware', color: '#ff8c00'},
-                {type: 'DDoS', color: '#ffdd00'},
-                {type: 'Ransomware', color: '#ff00ff'},
-                {type: 'Credential Stuffing', color: '#00ffff'}
-            ];
+            renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
             
-            threats.forEach((threat, index) => {
-                // Create threat line
-                const angle = (index * 72) * (Math.PI / 180); // Convert to radians
-                const startX = globeCenterX + Math.cos(angle) * 200;
-                const startY = globeCenterY + Math.sin(angle) * 200;
+            // Create a glowing globe
+            const globeGeometry = new THREE.SphereGeometry(1.5, 32, 32);
+            const globeMaterial = new THREE.MeshPhongMaterial({
+                color: 0x0a0a16,
+                emissive: 0x0088ff,
+                emissiveIntensity: 0.3,
+                shininess: 80,
+                transparent: true,
+                opacity: 0.9
+            });
+            const globe = new THREE.Mesh(globeGeometry, globeMaterial);
+            scene.add(globe);
+            
+            // Add wireframe for better visualization
+            const wireframe = new THREE.WireframeGeometry(globeGeometry);
+            const wireframeMaterial = new THREE.LineBasicMaterial({
+                color: 0x00aaff,
+                opacity: 0.3,
+                transparent: true
+            });
+            const wireframeMesh = new THREE.LineSegments(wireframe, wireframeMaterial);
+            globe.add(wireframeMesh);
+            
+            // Add ambient light
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+            scene.add(ambientLight);
+            
+            // Add directional light
+            const directionalLight = new THREE.DirectionalLight(0x00aaff, 0.8);
+            directionalLight.position.set(5, 5, 5);
+            scene.add(directionalLight);
+            
+            // Add point lights for glowing effect
+            const pointLight1 = new THREE.PointLight(0x00aaff, 1, 10);
+            pointLight1.position.set(2, 2, 2);
+            scene.add(pointLight1);
+            
+            const pointLight2 = new THREE.PointLight(0x00ff88, 0.8, 10);
+            pointLight2.position.set(-2, -2, -2);
+            scene.add(pointLight2);
+            
+            // Add particles for cyber effect
+            const particlesGeometry = new THREE.BufferGeometry();
+            const particlesCount = 500;
+            const posArray = new Float32Array(particlesCount * 3);
+            
+            for (let i = 0; i < particlesCount * 3; i += 3) {
+                // Random position around the globe
+                const radius = 2 + Math.random() * 1.5;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(2 * Math.random() - 1);
                 
-                const line = document.createElement('div');
-                line.className = 'threat-line';
-                line.style.left = `${startX}px`;
-                line.style.top = `${startY}px`;
-                line.style.width = '0';
-                line.style.transform = `rotate(${Math.atan2(globeCenterY - startY, globeCenterX - startX)}rad)`;
-                line.style.backgroundColor = `linear-gradient(to right, ${threat.color}, transparent)`;
-                line.style.boxShadow = `0 0 10px ${threat.color}`;
-                
-                vizContainer.appendChild(line);
-                
-                // Create threat node
-                const node = document.createElement('div');
-                node.className = 'threat-node';
-                node.style.left = `${startX}px`;
-                node.style.top = `${startY}px`;
-                node.style.backgroundColor = threat.color;
-                node.style.boxShadow = `0 0 10px ${threat.color}`;
-                vizContainer.appendChild(node);
-                
-                // Create threat label
-                const label = document.createElement('div');
-                label.className = 'threat-label';
-                label.textContent = threat.type;
-                label.style.left = `${startX + 10}px`;
-                label.style.top = `${startY - 20}px`;
-                label.style.color = threat.color;
-                vizContainer.appendChild(label);
-                
-                // Animate the threat line
-                setTimeout(() => {
-                    line.style.width = `${Math.sqrt(
-                        Math.pow(globeCenterX - startX, 2) + 
-                        Math.pow(globeCenterY - startY, 2)
-                    )}px`;
-                }, index * 500);
+                posArray[i] = radius * Math.sin(phi) * Math.cos(theta);
+                posArray[i + 1] = radius * Math.sin(phi) * Math.sin(theta);
+                posArray[i + 2] = radius * Math.cos(phi);
+            }
+            
+            particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+            
+            const particlesMaterial = new THREE.PointsMaterial({
+                size: 0.02,
+                color: 0x00aaff,
+                transparent: true,
+                opacity: 0.7
             });
             
-            // Create random attacks
-            setInterval(() => {
-                const startX = Math.random() * window.innerWidth;
-                const startY = Math.random() * window.innerHeight;
+            const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+            scene.add(particlesMesh);
+            
+            // Add threat indicators
+            const threatMarkers = [];
+            const threatColors = [0xff3232, 0xff8c00, 0xffff00, 0xff00ff];
+            
+            function addThreatMarker() {
+                const threatGeometry = new THREE.SphereGeometry(0.08, 8, 8);
+                const threatMaterial = new THREE.MeshBasicMaterial({
+                    color: threatColors[Math.floor(Math.random() * threatColors.length)],
+                    emissive: 0xff3232,
+                    emissiveIntensity: 0.8
+                });
                 
-                const threatType = threats[Math.floor(Math.random() * threats.length)];
+                const threat = new THREE.Mesh(threatGeometry, threatMaterial);
                 
-                const line = document.createElement('div');
-                line.className = 'threat-line';
-                line.style.left = `${startX}px`;
-                line.style.top = `${startY}px`;
-                line.style.width = '0';
-                line.style.transform = `rotate(${Math.atan2(globeCenterY - startY, globeCenterX - startX)}rad)`;
-                line.style.backgroundColor = `linear-gradient(to right, ${threatType.color}, transparent)`;
-                line.style.boxShadow = `0 0 10px ${threatType.color}`;
+                // Position threat randomly on the globe surface
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(2 * Math.random() - 1);
+                const radius = 1.55;
                 
-                vizContainer.appendChild(line);
+                threat.position.x = radius * Math.sin(phi) * Math.cos(theta);
+                threat.position.y = radius * Math.sin(phi) * Math.sin(theta);
+                threat.position.z = radius * Math.cos(phi);
                 
-                setTimeout(() => {
-                    line.style.width = `${Math.sqrt(
-                        Math.pow(globeCenterX - startX, 2) + 
-                        Math.pow(globeCenterY - startY, 2)
-                    )}px`;
-                }, 10);
+                scene.add(threat);
+                threatMarkers.push(threat);
                 
-                // Remove after animation
-                setTimeout(() => {
-                    line.remove();
-                }, 3000);
-            }, 1000);
+                // Remove some threats occasionally
+                if (threatMarkers.length > 20) {
+                    const oldThreat = threatMarkers.shift();
+                    scene.remove(oldThreat);
+                }
+                
+                // Schedule next threat
+                setTimeout(addThreatMarker, 800 + Math.random() * 1200);
+            }
+            
+            // Add connecting lines for threats
+            const lineMaterial = new THREE.LineBasicMaterial({
+                color: 0xff3232,
+                opacity: 0.4,
+                transparent: true
+            });
+            
+            const lines = [];
+            
+            function addConnectionLine() {
+                if (threatMarkers.length > 1) {
+                    const startIndex = Math.floor(Math.random() * threatMarkers.length);
+                    let endIndex;
+                    do {
+                        endIndex = Math.floor(Math.random() * threatMarkers.length);
+                    } while (endIndex === startIndex);
+                    
+                    const startPos = threatMarkers[startIndex].position;
+                    const endPos = threatMarkers[endIndex].position;
+                    
+                    const lineGeometry = new THREE.BufferGeometry().setFromPoints([
+                        new THREE.Vector3(startPos.x, startPos.y, startPos.z),
+                        new THREE.Vector3(endPos.x, endPos.y, endPos.z)
+                    ]);
+                    
+                    const line = new THREE.Line(lineGeometry, lineMaterial);
+                    scene.add(line);
+                    lines.push(line);
+                    
+                    // Remove line after some time
+                    setTimeout(() => {
+                        scene.remove(line);
+                        lines.splice(lines.indexOf(line), 1);
+                    }, 2000);
+                }
+                
+                // Schedule next line
+                setTimeout(addConnectionLine, 300 + Math.random() * 500);
+            }
+            
+            // Position camera
+            camera.position.z = 5;
+            
+            // Animation loop
+            function animate() {
+                requestAnimationFrame(animate);
+                
+                // Rotate globe
+                globe.rotation.y += 0.001;
+                globe.rotation.x += 0.0005;
+                
+                // Animate threats
+                threatMarkers.forEach(threat => {
+                    threat.scale.x = 0.8 + Math.sin(Date.now() * 0.005) * 0.2;
+                    threat.scale.y = 0.8 + Math.sin(Date.now() * 0.005) * 0.2;
+                    threat.scale.z = 0.8 + Math.sin(Date.now() * 0.005) * 0.2;
+                });
+                
+                // Animate particles
+                particlesMesh.rotation.y += 0.001;
+                particlesMesh.rotation.x += 0.0005;
+                
+                renderer.render(scene, camera);
+            }
+            
+            // Start animations
+            animate();
+            setTimeout(addThreatMarker, 1000);
+            setTimeout(addConnectionLine, 1500);
+            
+            // Handle window resize
+            window.addEventListener('resize', () => {
+                camera.aspect = canvas.clientWidth / canvas.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+            });
         }
         
         // Initialize when page loads
-        window.addEventListener('load', initThreatViz);
+        window.addEventListener('load', () => {
+            initThreatVisualization();
+            
+            // Animate threat counters
+            const threatsBlocked = document.getElementById('threatsBlocked');
+            const incidents = document.getElementById('incidents');
+            
+            let threatsCount = 8421;
+            let incidentsCount = 127;
+            
+            setInterval(() => {
+                threatsCount += Math.floor(Math.random() * 3);
+                incidentsCount = 120 + Math.floor(Math.random() * 15);
+                
+                threatsBlocked.textContent = threatsCount.toLocaleString();
+                incidents.textContent = incidentsCount;
+            }, 2000);
+        });
         
         // Parallax effect for hero section
         window.addEventListener('scroll', function() {
             const scrollPosition = window.scrollY;
-            const threatViz = document.getElementById('threatViz');
+            const threatViz = document.querySelector('.threat-viz');
             
             if (threatViz) {
                 threatViz.style.transform = `translateY(${scrollPosition * 0.3}px)`;
